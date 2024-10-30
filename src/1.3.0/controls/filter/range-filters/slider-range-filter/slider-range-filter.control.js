@@ -36,17 +36,20 @@ class SliderRangeFilter extends BaseRangeFilterControlsGroup{
         const valInput1 = control.element.querySelector('[data-type="value-1-input"]');
         const valInput2 = control.element.querySelector('[data-type="value-2-input"]');
 
+        rangeSliderFilterControl.minLabel = control.element.getAttribute('data-min-label');
+        rangeSliderFilterControl.maxLabel = control.element.getAttribute('data-max-label');
+
         if(!sliderEl) return;
 
         //control properties
         const orientation = control.element.getAttribute('data-orientation') || 'horizontal'; //'vertical'
 
         for(let el of rangeSliderFilterControl.minElements){
-            el.textContent = rangeSliderFilterControl.min;
+            el.textContent = rangeSliderFilterControl.minLabel || rangeSliderFilterControl.min;
         }
 
         for(let el of rangeSliderFilterControl.maxElements){
-            el.textContent = rangeSliderFilterControl.max;
+            el.textContent = rangeSliderFilterControl.maxLabel || rangeSliderFilterControl.max;
         }
 
         //check if control contains a link and it is in the deep links parameters
@@ -83,11 +86,11 @@ class SliderRangeFilter extends BaseRangeFilterControlsGroup{
                 }
 
                 for(let el of rangeSliderFilterControl.val1Elements){
-                    el.textContent = Math.round(value1);
+                    el.textContent = (value1 === rangeSliderFilterControl.min && rangeSliderFilterControl.minLabel) ? rangeSliderFilterControl.minLabel : Math.round(value1);
                 }
 
                 for(let el of rangeSliderFilterControl.val2Elements){
-                    el.textContent = Math.round(value2);
+                    el.textContent = (value2 === rangeSliderFilterControl.max && rangeSliderFilterControl.maxLabel) ? rangeSliderFilterControl.maxLabel : Math.round(value2);
                 }
 
                 for(let control of this.controls){

@@ -93,6 +93,22 @@ class BaseSliderControl{
 
             //set initial values
             this.setValues(value1, value2);
+
+            // Ensure min/max labels are applied on initialization
+            const minLabel = this.element.parentElement.getAttribute('data-min-label');
+            const maxLabel = this.element.parentElement.getAttribute('data-max-label');
+            
+            if (value1 === min && minLabel) {
+                this.element.parentElement.querySelectorAll('[data-type="value-1"]').forEach(el => {
+                    el.textContent = minLabel;
+                });
+            }
+            
+            if (value2 === max && maxLabel) {
+                this.element.parentElement.querySelectorAll('[data-type="value-2"]').forEach(el => {
+                    el.textContent = maxLabel;
+                });
+            }
         }
     }
 
@@ -117,6 +133,18 @@ class BaseSliderControl{
 
         const pos1 = this.getInnerValue(value1, this.min, this.max);
         const pos2 = this.getInnerValue(value2, this.min, this.max);
+
+        // Update value display elements
+        const minLabel = this.element.parentElement.getAttribute('data-min-label');
+        const maxLabel = this.element.parentElement.getAttribute('data-max-label');
+        
+        this.element.parentElement.querySelectorAll('[data-type="value-1"]').forEach(el => {
+            el.textContent = (value1 === this.min && minLabel) ? minLabel : Math.round(value1);
+        });
+        
+        this.element.parentElement.querySelectorAll('[data-type="value-2"]').forEach(el => {
+            el.textContent = (value2 === this.max && maxLabel) ? maxLabel : Math.round(value2);
+        });
 
         this.update({
             x: pos2,
@@ -302,14 +330,17 @@ class BaseSliderControl{
             
             const value1 = Math.round(this.handler1.value);
             const value2 = Math.round(this.handler2.value);
-                       
-            // Directly update value display elements within this slider only
+            
+            // Update value display elements within this slider only
+            const minLabel = this.element.parentElement.getAttribute('data-min-label');
+            const maxLabel = this.element.parentElement.getAttribute('data-max-label');
+            
             this.element.parentElement.querySelectorAll('[data-type="value-1"]').forEach(el => {
-                el.textContent = value1;
+                el.textContent = (value1 === this.min && minLabel) ? minLabel : value1;
             });
             
             this.element.parentElement.querySelectorAll('[data-type="value-2"]').forEach(el => {
-                el.textContent = value2;
+                el.textContent = (value2 === this.max && maxLabel) ? maxLabel : value2;
             });
 
             // Update input values if they exist
@@ -384,6 +415,20 @@ class BaseSliderControl{
                     this.valueInput2.value = Math.round(handler.value);
                 }
             }
+
+            // Update value display elements
+            const value1 = Math.round(this.handler1.value);
+            const value2 = Math.round(this.handler2.value);
+            const minLabel = this.element.parentElement.getAttribute('data-min-label');
+            const maxLabel = this.element.parentElement.getAttribute('data-max-label');
+            
+            this.element.parentElement.querySelectorAll('[data-type="value-1"]').forEach(el => {
+                el.textContent = (value1 === this.min && minLabel) ? minLabel : value1;
+            });
+            
+            this.element.parentElement.querySelectorAll('[data-type="value-2"]').forEach(el => {
+                el.textContent = (value2 === this.max && maxLabel) ? maxLabel : value2;
+            });
 
             //call callback function only if not dragging or if explicitly requested via sendCallback
             if(this.callback && (sendCallback && !this.dragging)){
