@@ -1,6 +1,6 @@
 {
   "name": "jplist-es6",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "jPList is a JavaScript library for sorting, pagination and filtering of any HTML structure like DIVs, UL/LI, tables, etc.",
   "scripts": {
     "watch": "webpack --config webpack.config.js --watch",
@@ -63,8 +63,8 @@
     "sinon": "^4.3.0",
     "style-loader": "^0.20.3",
     "uglifycss": "0.0.29",
-    "webpack": "^4.17.1",
-    "webpack-cli": "^3.1.0"
+    "webpack": "^4.47.0",
+    "webpack-cli": "^3.3.12"
   },
   "jest": {
     "moduleFileExtensions": [
