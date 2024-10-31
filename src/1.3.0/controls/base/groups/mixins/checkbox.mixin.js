@@ -99,15 +99,12 @@ const CheckboxMixin = superclass => class extends superclass {
      */
     getDeepLink(){
         const cbArr = this.checkboxes.map(cb => {
-
-            if(cb.id){
-                return cb.selected ? cb.id + '=1' : cb.id + '=0';
+            if(cb.id && cb.selected){
+                return cb.id + '=1';
             }
-            else{
-                return '';
-            }
-
+            return '';
         }).filter(str => str !== '');
+        
         const unique = Array.from(new Set(cbArr));
         return unique.join('&');
     }
