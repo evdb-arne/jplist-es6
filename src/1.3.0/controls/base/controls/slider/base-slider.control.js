@@ -31,6 +31,10 @@ class BaseSliderControl{
             this.max = max;
             this.step = step;
 
+            // Set default values if not provided
+            if (value1 === 0) value1 = this.min;
+            if (value2 === 0) value2 = this.max;
+
             if(isVertical){
                 this.element.classList.add('jplist-slider-vertical');
             }
@@ -45,20 +49,28 @@ class BaseSliderControl{
             this.range.classList.add('jplist-slider-range');
             this.element.appendChild(this.range);
 
-            //initial value
-            this.handler1.left = 0;
-            this.handler1.top = 0;
-            this.handler1.value = this.getPreviewValue(0, min, max); //0
-
             //create and append the second holder
             this.handler2 = document.createElement('span');
             this.handler2.classList.add('jplist-slider-holder-2');
             this.element.appendChild(this.handler2);
 
-            //initial value
-            this.handler2.left = 0;
+            // Initialize handlers with proper values
+            const initialPos1 = this.getInnerValue(value1, this.min, this.max);
+            const initialPos2 = this.getInnerValue(value2, this.min, this.max);
             this.handler2.top = 0;
-            this.handler2.value = this.getPreviewValue(0, min, max); //0
+            const lefttop = this.isVertical ? 'top' : 'left';
+            
+            // Set initial positions
+            this.handler1.style[lefttop] = initialPos1 + '%';
+            this.handler2.style[lefttop] = initialPos2 + '%';
+            this.valueInput1 = valInput1;
+            // Set initial range
+            this.range.style[lefttop] = initialPos1 + '%';
+            this.range.style[this.isVertical ? 'height' : 'width'] = (initialPos2 - initialPos1) + '%';
+
+            // Set initial values
+            this.handler1.value = value1;
+            this.handler2.value = value2;
 
             this.dragging = null;
 
@@ -77,7 +89,7 @@ class BaseSliderControl{
 
             document.addEventListener('mousemove', this.render.bind(this));
             document.addEventListener('touchmove', this.render.bind(this));
-            window.addEventListener('resize', this.resize.bind(this));
+            //window.addEventListener('resize', this.resize.bind(this));
 
             document.addEventListener('mouseup', this.stop.bind(this));
             document.addEventListener('touchend', this.stop.bind(this));
@@ -134,7 +146,20 @@ class BaseSliderControl{
         const pos1 = this.getInnerValue(value1, this.min, this.max);
         const pos2 = this.getInnerValue(value2, this.min, this.max);
 
-        // Update value display elements
+        // Update handlers and range directly with percentages
+        const lefttop = this.isVertical ? 'top' : 'left';
+        
+        this.handler1.style[lefttop] = pos1 + '%';
+        this.handler2.style[lefttop] = pos2 + '%';
+        
+        this.range.style[lefttop] = pos1 + '%';
+        this.range.style[this.isVertical ? 'height' : 'width'] = (pos2 - pos1) + '%';
+
+        // Update values
+        this.handler1.value = value1;
+        this.handler2.value = value2;
+
+        // Update display elements
         const minLabel = this.element.parentElement.getAttribute('data-min-label');
         const maxLabel = this.element.parentElement.getAttribute('data-max-label');
         
@@ -146,57 +171,33 @@ class BaseSliderControl{
             el.textContent = (value2 === this.max && maxLabel) ? maxLabel : Math.round(value2);
         });
 
-        this.update({
-            x: pos2,
-            y: pos2
-        }, this.handler2, sendCallback);
-
-        this.update({
-            x: pos1,
-            y: pos1
-        }, this.handler1, sendCallback);
+        // Call callback if needed
+        if(this.callback && sendCallback) {
+            this.callback(value1, value2);
+        }
     }
 
     /**
-     * convert [0, slider-width] range to [min, max] range for the specified value
+     * convert actual value to percentage
      * @param {number} value
      * @param {number} min
      * @param {number} max
-     * @return {number} mappedValue
+     * @return {number} percentage
      */
-    getPreviewValue(value, min, max){
-
-        const rect = this.element.getBoundingClientRect();
-        const size = this.isVertical? 'height': 'width';
-
-        const newStart = min;
-        const newEnd = max;
-        const originalStart = 0;
-        const originalEnd = rect[size];
-
-        //return Math.round((newEnd - newStart) * ((value - originalStart) / (originalEnd - originalStart)) + newStart);
-        return Math.trunc((newEnd - newStart) * ((value - originalStart) / (originalEnd - originalStart)) + newStart);
+    getInnerValue(value, min, max) {
+        if (max === min) return 0;
+        return ((value - min) / (max - min)) * 100;
     }
 
     /**
-     * convert [min, max] range to [0, slider-width] range for the specified value
-     * @param {number} value
+     * convert percentage to actual value
+     * @param {number} percentage
      * @param {number} min
      * @param {number} max
-     * @return {number} mappedValue
+     * @return {number} value
      */
-    getInnerValue(value, min, max){
-
-        const rect = this.element.getBoundingClientRect();
-        const size = this.isVertical? 'height': 'width';
-
-        const newStart = 0;
-        const newEnd = rect[size];
-        const originalStart = min;
-        const originalEnd = max;
-
-        //return Math.round((newEnd - newStart) * ((value - originalStart) / (originalEnd - originalStart)) + newStart);
-        return (newEnd - newStart) * ((value - originalStart) / (originalEnd - originalStart)) + newStart;
+    getPreviewValue(percentage, min, max) {
+        return Math.round(((max - min) * (percentage / 100)) + min);
     }
 
     /**
@@ -309,18 +310,6 @@ class BaseSliderControl{
     }
 
     /**
-     * on window resize
-     * @param {Object} e
-     */
-    resize(e){
-
-        if(this.handler1 && this.handler2){
-
-            this.setValues(this.handler1.value, this.handler2.value);
-        }
-    }
-
-    /**
      * render the updated state
      */
     render(e){
@@ -360,54 +349,48 @@ class BaseSliderControl{
      * @param {boolean} sendCallback
      */
     update(position, handler, sendCallback = true){
-
         if(handler){
-
             const rect = this.element.getBoundingClientRect();
+            
+            // Convert position to percentage
+            const percentage = this.isVertical ? 
+                (position.y / rect.height) * 100 : 
+                (position.x / rect.width) * 100;
 
-            const size = this.isVertical? 'height': 'width';
-            const xy = this.isVertical? 'y': 'x';
-            const lefttop = this.isVertical? 'top': 'left';
+            // Clamp percentage between 0 and 100
+            let clampedPercentage = Math.max(0, Math.min(100, percentage));
 
-            if(position[xy] < 0){
-                position[xy] = 0;
+            // Handle constraints between handlers
+            if(handler === this.handler1 && parseFloat(this.handler2.style[this.isVertical ? 'top' : 'left']) <= clampedPercentage){
+                clampedPercentage = parseFloat(this.handler2.style[this.isVertical ? 'top' : 'left']);
             }
 
-            if(position[xy] > rect[size]){
-                position[xy] = rect[size];
+            if(handler === this.handler2 && parseFloat(this.handler1.style[this.isVertical ? 'top' : 'left']) >= clampedPercentage){
+                clampedPercentage = parseFloat(this.handler1.style[this.isVertical ? 'top' : 'left']);
             }
 
-            if(handler === this.handler1 && position[xy] >= this.handler2[lefttop]){
-                position[xy] = this.handler2[lefttop];
-            }
+            // Save current value
+            const lefttop = this.isVertical ? 'top' : 'left';
+            handler[lefttop] = clampedPercentage;
+            handler.value = this.getPreviewValue(clampedPercentage, this.min, this.max);
 
-            if(handler === this.handler2 && position[xy] <= this.handler1[lefttop]){
-                position[xy] = this.handler1[lefttop];
-            }
-
-            //save current value
-            handler[lefttop] = position[xy];
-            //const value = Math.round(position[xy] * 100 / rect[size]); //value in %
-            handler.value = this.getPreviewValue(position[xy], this.min, this.max);
-
-            //update the position with steps
+            // Handle step constraints
             if (this.step > 1) {
                 const stepValue = Math.ceil(handler.value / this.step) * this.step;
                 handler.value = stepValue > this.max ? this.max : stepValue;
-                const step = rect[size] / (this.max / this.step);
-    
-                position[xy] = Math.fround(position[xy] / step) * step;
+                clampedPercentage = this.getInnerValue(handler.value, this.min, this.max);
             }
 
-            handler.style[lefttop] = (position[xy]) + 'px';
+            // Update handler position with percentage
+            handler.style[lefttop] = clampedPercentage + '%';
 
-            //update range element
-            this.range.style[lefttop] = this.handler1[lefttop] + 'px';
+            // Update range element
+            const rangeStart = parseFloat(this.handler1.style[lefttop]);
+            const rangeEnd = parseFloat(this.handler2.style[lefttop]);
+            this.range.style[lefttop] = rangeStart + '%';
+            this.range.style[this.isVertical ? 'height' : 'width'] = (rangeEnd - rangeStart) + '%';
 
-            const rangeHeight = this.handler2[lefttop] - this.handler1[lefttop];
-            this.range.style[size] = (rangeHeight >= 0 ? rangeHeight : 0) + 'px';
-
-            // Update display values regardless of dragging state
+            // Update input values if they exist
             if (this.valueInput1 && this.valueInput2) {
                 if (handler === this.handler1) {
                     this.valueInput1.value = Math.round(handler.value);
@@ -430,7 +413,7 @@ class BaseSliderControl{
                 el.textContent = (value2 === this.max && maxLabel) ? maxLabel : value2;
             });
 
-            //call callback function only if not dragging or if explicitly requested via sendCallback
+            // Call callback function only if not dragging or if explicitly requested via sendCallback
             if(this.callback && (sendCallback && !this.dragging)){
                 this.callback(this.handler1.value, this.handler2.value);
             }
@@ -453,38 +436,21 @@ class BaseSliderControl{
     }
 
     /**
-     * subtraction of 2 vectors
-     * @param {Object} v1 - vector #1
-     * @param {Object} v2 - vector #2
-     */
-    static sub(v1, v2){
-
-        return {
-            x: v1.x - v2.x,
-            y: v1.y - v2.y
-        };
-    }
-
-    /**
      * get handler position from mouse / tap position
      * @param {object} e
      * @return {object} handler position
      */
     getHandlerPos(e){
-
         const rect = this.element.getBoundingClientRect();
-
         const point = {
             x: e.touches && e.touches.length > 0 ? e.touches[0].pageX : e.clientX,
             y: e.touches && e.touches.length > 0 ? e.touches[0].pageY : e.clientY
         };
 
-        const vector = {
-            x: rect.left,
-            y: rect.top
+        return {
+            x: point.x - rect.left,
+            y: point.y - rect.top
         };
-
-        return BaseSliderControl.sub(point, vector);
     }
 
 }

@@ -39,6 +39,13 @@ class SliderRangeFilter extends BaseRangeFilterControlsGroup{
         rangeSliderFilterControl.minLabel = control.element.getAttribute('data-min-label');
         rangeSliderFilterControl.maxLabel = control.element.getAttribute('data-max-label');
 
+        // Get values from data attributes
+        rangeSliderFilterControl.min = Number(control.element.getAttribute('data-min')) || 0;
+        rangeSliderFilterControl.max = Number(control.element.getAttribute('data-max')) || 100;
+        rangeSliderFilterControl.step = Number(control.element.getAttribute('data-step')) || 1;
+        rangeSliderFilterControl.from = Number(control.element.getAttribute('data-from')) || rangeSliderFilterControl.min;
+        rangeSliderFilterControl.to = Number(control.element.getAttribute('data-to')) || rangeSliderFilterControl.max;
+
         if(!sliderEl) return;
 
         //control properties
